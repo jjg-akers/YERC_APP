@@ -10,6 +10,38 @@ import UIKit
 import MapKit
 import CoreLocation
 
+class FilesManager {
+    enum Error: Swift.Error {
+        case fileAlreadyExists
+        case invalidDirectory
+        case writtingFailed
+    }
+    let fileManager: FileManager
+    init(fileManager: FileManager = .default) {
+        self.fileManager = fileManager
+    }
+    func save(fileNamed: String, data: FieldObservaiton) throws {
+        guard let url = makeURL(forFileNamed: fileNamed) else {
+            throw Error.invalidDirectory
+        }
+        if fileManager.fileExists(atPath: url.absoluteString) {
+            throw Error.fileAlreadyExists
+        }
+        do {
+            try data.write(to: url, options: .withoutOverwriting)
+        } catch {
+            debugPrint(error)
+            throw Error.writtingFailed
+        }
+    }
+    private func makeURL(forFileNamed fileName: String) -> URL? {
+        guard let url = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
+            return nil
+        }
+        return url.appendingPathComponent(fileName)
+    }
+    
+}
 
 final class CustomButton: UIButton {
 
@@ -36,6 +68,42 @@ final class CustomButton: UIButton {
 
 }
 
+// Class to store observtions data
+final class FieldObservaiton {
+    // fields
+    private let latitude: String
+    private let longitude: String
+    private let date: String
+    private let time: String
+    private let temp: String
+    private let comment: String
+    private let photo: UIImage
+    
+    enum Error: Swift.Error {
+        case fileAlreadyExists
+        case invalidDirectory
+        case writtingFailed
+    }
+ 
+    //constructor
+    init(lat: String, long: String, date: String, time: String, temp: String, comment: String, photo: UIImage){
+        self.latitude = lat
+        self.longitude = long
+        self.date = date
+        self.time = time
+        self.temp = temp
+        self.comment = comment
+        self.photo = photo
+    }
+    
+    func write(to url: URL, options: Data.WritingOptions) throws {
+        
+    }
+    
+}
+    
+    
+
 class SecondViewController: UIViewController, UITextFieldDelegate, CLLocationManagerDelegate, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
     // define variables
     @IBOutlet weak var latLabel: UILabel!
@@ -43,8 +111,15 @@ class SecondViewController: UIViewController, UITextFieldDelegate, CLLocationMan
     @IBOutlet weak var timeText: UITextField!
     @IBOutlet weak var tempText: UITextField!
     @IBOutlet weak var commentsText: UITextField!
-    
     @IBOutlet weak var dateText: UITextField!
+    
+    var obsservationImage: UIImage? = nil
+    // Keep track of which text field is currently selected
+    var activeTextField = UITextField()
+    // Assign the newly active text field to your activeTextField variable
+    func textFieldDidBeginEditing(_ textField: UITextField) {
+         self.activeTextField = textField
+    }
     
 
     
@@ -73,20 +148,25 @@ class SecondViewController: UIViewController, UITextFieldDelegate, CLLocationMan
     
     // Keyboard display functions
     @objc func keyboardWillShow(notification: NSNotification) {
-        guard let userInfo = notification.userInfo else {return}
-        guard let keyboardSize = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else {return}
-        let keyboardFrame = keyboardSize.cgRectValue
-        if self.view.frame.origin.y == 0{
-            self.view.frame.origin.y -= keyboardFrame.height
+        if activeTextField == self.commentsText!{
+            guard let userInfo = notification.userInfo else {return}
+            guard let keyboardSize = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else {return}
+            let keyboardFrame = keyboardSize.cgRectValue
+            if self.commentsText.frame.minY >= keyboardFrame.height{
+            //if self.view.frame.origin.y == 0{
+                self.view.frame.origin.y -= keyboardFrame.height
+            }
         }
-
     }
     @objc func keyboardWillHide(notification: NSNotification) {
-        guard let userInfo = notification.userInfo else {return}
-        guard let keyboardSize = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else {return}
-        let keyboardFrame = keyboardSize.cgRectValue
-        if self.view.frame.origin.y != 0{
-            self.view.frame.origin.y += keyboardFrame.height
+        if activeTextField == self.commentsText!{
+            guard let userInfo = notification.userInfo else {return}
+            guard let keyboardSize = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else {return}
+            let keyboardFrame = keyboardSize.cgRectValue
+            if self.commentsText.frame.minY != 0{
+            //if self.view.frame.origin.y != 0{
+                self.view.frame.origin.y += keyboardFrame.height
+            }
         }
     }
     
@@ -135,7 +215,29 @@ class SecondViewController: UIViewController, UITextFieldDelegate, CLLocationMan
         
     }
     
+//    @IBOutlet weak var latLabel: UILabel!
+//    @IBOutlet weak var longLabel: UILabel!
+//    @IBOutlet weak var timeText: UITextField!
+//    @IBOutlet weak var tempText: UITextField!
+//    @IBOutlet weak var commentsText: UITextField!
+//    @IBOutlet weak var dateText: UITextField!
+    
+    //    init(lat: Double, long: Double, date: String, time: String, temp: Double, comment: String, photo: UIImage){
+    
     @IBAction func submitSample(_ sender: Any) {
+        var currentObs = FieldObservaiton(lat: latLabel!.text!, long: longLabel.text!, date: dateText.text!, time: timeText.text!, temp: tempText.text!, comment: commentsText.text ?? "none", photo: obsservationImage!)
+        var fileman = FilesManager()
+        var filename = timeText.text!
+        
+        do {
+            try fileman.save(fileNamed: filename, data: currentObs)
+        } catch {
+            debugPrint(error)
+            //throw Error.writtingFailed
+        }
+    }
+    
+    func submitToServe(){
         
         // setup JSON
         //let json = "{data: {lat: 37.7, long: -122.4, date: 2019-12-18, time: 10:26:17}, comments: weom thins goninset oiansg}"
@@ -229,7 +331,7 @@ class SecondViewController: UIViewController, UITextFieldDelegate, CLLocationMan
             print("No image found")
             return
         }
-
+        obsservationImage = image
         // print out the image size as a test
         print(image.size)
     }
