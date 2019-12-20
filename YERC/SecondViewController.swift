@@ -36,24 +36,58 @@ final class CustomButton: UIButton {
 
 }
 
-class SecondViewController: UIViewController, CLLocationManagerDelegate {
+class SecondViewController: UIViewController, UITextFieldDelegate, CLLocationManagerDelegate, UINavigationControllerDelegate, UIImagePickerControllerDelegate {
     // define variables
     @IBOutlet weak var latLabel: UILabel!
     @IBOutlet weak var longLabel: UILabel!
-    @IBOutlet weak var dateText: UITextField!
     @IBOutlet weak var timeText: UITextField!
     @IBOutlet weak var tempText: UITextField!
+    @IBOutlet weak var commentsText: UITextField!
     
+    @IBOutlet weak var dateText: UITextField!
+    
+
     
  //create a CLLocationManager
     var locationManager: CLLocationManager!
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        dateText.delegate = self
+        timeText.delegate = self
+        tempText.delegate = self
+        commentsText.delegate = self
         
+        // manage keyboad covering textfield
+        NotificationCenter.default.addObserver(self, selector: #selector(SecondViewController.keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
+        
+        NotificationCenter.default.addObserver(self, selector: #selector(SecondViewController.keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
+        
+        // hide key board when user taps outside of it
+        let tap = UITapGestureRecognizer(target: self.view, action: #selector(UIView.endEditing(_:)))
+        view.addGestureRecognizer(tap)
         //locationManager.delegate = self
         //request location authorization when the app is in use
         //locationManager.requestWhenInUseAuthorization()
+    }
+    
+    // Keyboard display functions
+    @objc func keyboardWillShow(notification: NSNotification) {
+        guard let userInfo = notification.userInfo else {return}
+        guard let keyboardSize = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else {return}
+        let keyboardFrame = keyboardSize.cgRectValue
+        if self.view.frame.origin.y == 0{
+            self.view.frame.origin.y -= keyboardFrame.height
+        }
+
+    }
+    @objc func keyboardWillHide(notification: NSNotification) {
+        guard let userInfo = notification.userInfo else {return}
+        guard let keyboardSize = userInfo[UIResponder.keyboardFrameEndUserInfoKey] as? NSValue else {return}
+        let keyboardFrame = keyboardSize.cgRectValue
+        if self.view.frame.origin.y != 0{
+            self.view.frame.origin.y += keyboardFrame.height
+        }
     }
     
     //print("somethinga")
@@ -81,6 +115,7 @@ class SecondViewController: UIViewController, CLLocationManagerDelegate {
         timeText.text = timeString
         dateText.text = dateString
         
+        
 
      
         emailLabel.text = "Welcome \(userEmail)."
@@ -89,6 +124,116 @@ class SecondViewController: UIViewController, CLLocationManagerDelegate {
         // get current location
         determineCurrentLocation()
     }
+    // *** BUTTONS ****
+    // access Camera
+    @IBAction func addPicture(_ sender: Any) {
+        let vc = UIImagePickerController()
+        vc.sourceType = .camera
+        vc.allowsEditing = true
+        vc.delegate = self
+        present(vc, animated: true)
+        
+    }
+    
+    @IBAction func submitSample(_ sender: Any) {
+        
+        // setup JSON
+        //let json = "{data: {lat: 37.7, long: -122.4, date: 2019-12-18, time: 10:26:17}, comments: weom thins goninset oiansg}"
+        let json: [String: Any] = ["title": "ABC",
+                                   "dict": ["1":"First", "2":"Second"]]
+
+        let jsonData = try? JSONSerialization.data(withJSONObject: json)
+        
+        let url = URL(string: "https://httpbin.org/post")!
+        var request = URLRequest(url: url)
+        request.httpMethod = "POST"
+        request.addValue("application/json", forHTTPHeaderField: "Content-Type")
+        request.addValue("application/json", forHTTPHeaderField: "Accept")
+        
+        request.httpBody = jsonData
+        
+        let task = URLSession.shared.dataTask(with: request) { (data, response, error) in
+            if let error = error {
+                print("error: \(error)")
+            } else {
+                if let response = response as? HTTPURLResponse {
+                    print("statusCode: \(response.statusCode)")
+                }
+                guard let data = data, error == nil else {
+                    print(error?.localizedDescription ?? "No data")
+                    return
+                }
+                let responseJSON = try? JSONSerialization.jsonObject(with: data, options: [])
+                if let responseJSON = responseJSON as? [String: Any] {
+                    print(responseJSON)
+                }
+
+//                if let data = data, let dataString = String(data: data, encoding: .utf8) {
+//                    print("data: \(dataString)")
+//                }
+            }
+        }
+        task.resume()
+        //hitAPI(_for: "https://httpbin.org/post")
+        
+    }
+    
+    // HTTP request
+//    func hitAPI(_for URLString:String) {
+//       //let configuration = URLSessionConfiguration.default
+//       //let session = URLSession(configuration: configuration)
+//       let url = URL(string: URLString)!
+//       //let url = NSURL(string: urlString as String)
+//       var request = URLRequest(url: url)
+//       request.httpMethod = "POST"
+//        //print("headers: \(String(describing: request.allHTTPHeaderFields))")
+//        //print("method: \(request.httpMethod ?? "something")")
+
+//        print(request)
+//        //print(request.httpBody!)
+//
+//        let dataTask = URLSession.shared.dataTask(with: url) {
+//          data,response,error in
+//          // 1: Check HTTP Response for successful GET request
+//          guard let httpResponse = response as? HTTPURLResponse, let receivedData = data
+//          else {
+//             print("error: not a valid http response")
+//             return
+//          }
+//
+//        print("status code: \(httpResponse.statusCode)")
+//
+//          switch (httpResponse.statusCode) {
+//             case 200:
+//                print("respose code 200")
+//                print(receivedData)
+//                break
+//             case 400:
+//                print("respose code 400")
+//                break
+//             default:
+//                print("respose DEFAULT")
+//                break
+//          }
+//       }
+//       dataTask.resume()
+//    }
+    
+    
+    
+    // function for camera
+    func imagePickerController(_ picker: UIImagePickerController, didFinishPickingMediaWithInfo info: [UIImagePickerController.InfoKey : Any]) {
+        picker.dismiss(animated: true)
+
+        guard let image = info[.editedImage] as? UIImage else {
+            print("No image found")
+            return
+        }
+
+        // print out the image size as a test
+        print(image.size)
+    }
+    
     
     func determineCurrentLocation(){
         locationManager = CLLocationManager()

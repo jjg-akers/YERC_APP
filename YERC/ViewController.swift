@@ -10,7 +10,7 @@ import UIKit
 
 
 // viewController is subclass of UIViewcontroller class
-class ViewController: UIViewController {
+class ViewController: UIViewController, UITextFieldDelegate {
     
     //defiine fields
     
@@ -21,6 +21,7 @@ class ViewController: UIViewController {
     
     override func viewDidLoad() {
         super.viewDidLoad()
+        emailTextField.delegate = self
         // Do any additional setup after loading the view.
         //emailTextField.
     }
