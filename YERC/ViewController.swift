@@ -90,6 +90,10 @@ class ViewController: UIViewController, UITextFieldDelegate {
     }
     
 // prepare for segue
+    
+    // Add unwind seque action method so xcode know this view controller will be a destination
+    @IBAction func myUnwindAction(unwindSegue: UIStoryboardSegue){}
+    
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
         if segue.identifier == "startSampleSegue"
         {
