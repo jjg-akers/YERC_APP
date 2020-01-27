@@ -21,24 +21,108 @@ class FilesManager {
         self.fileManager = fileManager
     }
     func save(fileNamed: String, data: FieldObservaiton) throws {
-        guard let url = makeURL(forFileNamed: fileNamed) else {
-            throw Error.invalidDirectory
+        //print("")
+        //create a new folder
+       // let imgFolderURL = FileManager..appendingPathComponent("Observations")
+        // get documents directory
+        let dirPaths = fileManager.urls(for: .documentDirectory, in: .userDomainMask)
+
+        let docsURL = dirPaths[0]
+
+        let observationsDir = docsURL.appendingPathComponent("Observations")
+
+        // check if folder already exists
+        
+//        FileManager.default.url(for: .applicationSupportDirectory, in: .userDomainMask, appropriateFor: nil, create: true). It creates the directory if it doesn't exis
+        if !fileManager.fileExists(atPath: observationsDir.path) {
+            do{
+                try fileManager.createDirectory(atPath: observationsDir.path, withIntermediateDirectories: true, attributes: nil)
+            } catch {
+                print("Error: \(error.localizedDescription)")
+            }
         }
-        if fileManager.fileExists(atPath: url.absoluteString) {
-            throw Error.fileAlreadyExists
-        }
+        
+        // make new obs url
+        let newObsURL = observationsDir.appendingPathComponent("\(fileNamed).txt")
+        
+        // write it to disk
         do {
-            try data.write(to: url, options: .withoutOverwriting)
+            let datatoWrite = try NSKeyedArchiver.archivedData(withRootObject: data, requiringSecureCoding: false)
+            try datatoWrite.write(to: newObsURL, options: .withoutOverwriting)
         } catch {
+            print("error writing")
             debugPrint(error)
             throw Error.writtingFailed
         }
+
+//        // make a url for the file
+//        guard let url = makeURL(forFileNamed: fileNamed) else {
+//            throw Error.invalidDirectory
+//        }
+//
+//        print("in save filemanager save")
+//        if fileManager.fileExists(atPath: url.absoluteString) {
+//            throw Error.fileAlreadyExists
+//        }
+//        do {
+//            print("url: ", url)
+//            try data.write(to: url, options: .withoutOverwriting)
+//        } catch {
+//            print("error writing")
+//            debugPrint(error)
+//            throw Error.writtingFailed
+//        }
     }
+    
     private func makeURL(forFileNamed fileName: String) -> URL? {
         guard let url = fileManager.urls(for: .documentDirectory, in: .userDomainMask).first else {
             return nil
         }
         return url.appendingPathComponent(fileName)
+    }
+    
+    func listfiles(path: String) {
+        guard let url = makeURL(forFileNamed: "") else {
+            print(Error.invalidDirectory)
+            return
+        }
+        //print("listfiles URL: ", url)
+        //let path1 = String(url)
+        do {
+           // var directory =
+            let documentsURL = fileManager.urls(for: .documentDirectory, in: .allDomainsMask)[0]
+            let observationsURL = documentsURL.appendingPathComponent("Observations")
+            //print("printing urls: ", observationsURL)
+            //var directoryPath = fileManager.currentDirectoryPath
+
+            //let fullPath = directoryPath + "\(path)"
+
+            //print("fullpath: \(fullPath)")
+            //directoryPath = "~/Documents"
+            print("printing files: ")
+            
+            try print(fileManager.contentsOfDirectory(at: observationsURL, includingPropertiesForKeys: []))
+//            try print(fileManager.contentsOfDirectory(atPath: "/var/mobile/Containers/Data/Application/7C1B31F0-E6C8-4E80-94A0-8E53FEC863FC/Documents"))
+            
+            
+        } catch {
+            print(error)
+        }
+    }
+    
+    func read(fileNamed: String) throws -> Data {
+        guard let url = makeURL(forFileNamed: fileNamed) else {
+            throw Error.invalidDirectory
+        }
+        guard fileManager.fileExists(atPath: url.absoluteString) else {
+            throw Error.invalidDirectory
+        }
+        do {
+            return try Data(contentsOf: url)
+        } catch {
+            debugPrint(error)
+            throw Error.invalidDirectory
+        }
     }
     
 }
@@ -69,7 +153,8 @@ final class CustomButton: UIButton {
 }
 
 // Class to store observtions data
-final class FieldObservaiton {
+final class FieldObservaiton: NSObject, NSCoding {
+    
     // fields
     private let latitude: String
     private let longitude: String
@@ -77,7 +162,16 @@ final class FieldObservaiton {
     private let time: String
     private let temp: String
     private let comment: String
-    private let photo: UIImage
+    //private let photo: UIImage
+    
+    enum Key:String {
+        case latitude = "latitude"
+        case longitude = "longitude"
+        case date = "date"
+        case time = "time"
+        case temp = "temp"
+        case comment = "comment"
+    }
     
     enum Error: Swift.Error {
         case fileAlreadyExists
@@ -86,16 +180,42 @@ final class FieldObservaiton {
     }
  
     //constructor
-    init(lat: String, long: String, date: String, time: String, temp: String, comment: String, photo: UIImage){
+    init(lat: String, long: String, date: String, time: String, temp: String, comment: String){
+         //photo: UIImage){
         self.latitude = lat
         self.longitude = long
         self.date = date
         self.time = time
         self.temp = temp
         self.comment = comment
-        self.photo = photo
+        //self.photo = photo
     }
     
+    // class must conform o NSCoding to write to file
+    // needs to have an encode and a decode method
+    // use encode to encodes the type into an NSCoder object.
+    func encode(with coder: NSCoder) {
+        coder.encode(longitude, forKey: Key.longitude.rawValue)
+        coder.encode(latitude, forKey: Key.latitude.rawValue)
+        coder.encode(date, forKey: Key.date.rawValue)
+        coder.encode(time, forKey: Key.time.rawValue)
+        coder.encode(temp, forKey: Key.temp.rawValue)
+        coder.encode(comment, forKey: Key.comment.rawValue)
+    }
+    
+    //use init to initializes the type based on decoded information from an NSCoder object.
+    convenience init?(coder: NSCoder) {
+        guard let longitude = coder.decodeObject(forKey: Key.longitude.rawValue) as? String else { return nil }
+        guard let latitude = coder.decodeObject(forKey: Key.latitude.rawValue) as? String else { return nil }
+        guard let date = coder.decodeObject(forKey: Key.date.rawValue) as? String else { return nil }
+        guard let time = coder.decodeObject(forKey: Key.time.rawValue) as? String else { return nil }
+        guard let temp = coder.decodeObject(forKey: Key.temp.rawValue) as? String else { return nil }
+        guard let comment = coder.decodeObject(forKey: Key.comment.rawValue) as? String else { return nil }
+        
+        self.init(lat: latitude, long: longitude, date: date, time: time, temp: temp, comment: comment)
+    }
+        
+        
     func write(to url: URL, options: Data.WritingOptions) throws {
         
     }
@@ -128,7 +248,7 @@ class SecondViewController: UIViewController, UITextFieldDelegate, CLLocationMan
     // a decimal number
     func textFieldDidEndEditing(_ textField: UITextField) {
         if textField == self.tempText {
-            print("In end editing function")
+            print("In endediting function")
             if tempText.hasText {
 //                if Float(tempText.text!) == nil {
 //                    print("temp must be number")
@@ -204,11 +324,16 @@ class SecondViewController: UIViewController, UITextFieldDelegate, CLLocationMan
                   
                 if notification.name == UIResponder.keyboardWillHideNotification{
                       view.frame.origin.y = 0
+                    //print("inif")
                   }
                   else{
                       view.frame.origin.y = -keyboardFrame.height
+                      //print("inelse")
                   }
-              }
+            } else {
+                //print("in other else")
+                view.frame.origin.y = 0
+            }
         }
       }
     
@@ -286,12 +411,48 @@ class SecondViewController: UIViewController, UITextFieldDelegate, CLLocationMan
         
     }
     
-//    @IBOutlet weak var latLabel: UILabel!
-//    @IBOutlet weak var longLabel: UILabel!
-//    @IBOutlet weak var timeText: UITextField!
-//    @IBOutlet weak var tempText: UITextField!
-//    @IBOutlet weak var commentsText: UITextField!
-//    @IBOutlet weak var dateText: UITextField!
+    // Save file
+    
+    @IBAction func saveObservation(_ sender: Any) {
+        print("in save func")
+        // Check required fields
+        
+        // make data object
+        // Create a var with key: field values of current data
+        var currentObs = FieldObservaiton(lat: latLabel!.text!, long: longLabel.text!, date: dateText.text!, time: timeText.text!, temp: tempText.text!, comment: commentsText.text ?? "none")
+                                          
+                                          //photo: obsservationImage!)
+        let fileman = FilesManager()
+        
+        //use time in seconds as filename
+        let nowTime = Date()
+        let dateformat = DateFormatter()
+        dateformat.timeZone = TimeZone.current
+        dateformat.dateFormat = "ss"
+        let filename = dateformat.string(from: nowTime)
+        //var filename = timeText.text!
+        print("filename: \(filename)")
+        
+        
+         //Save file
+        do {
+            try fileman.save(fileNamed: filename, data: currentObs)
+        } catch {
+            debugPrint(error)
+            //throw Error.writtingFailed
+        }
+        
+        //list files
+        fileman.listfiles(path: filename)
+        
+        
+        
+        // clear everything and exit to home scree
+        
+        
+    }
+    
+
     
     //    init(lat: Double, long: Double, date: String, time: String, temp: Double, comment: String, photo: UIImage){
     
@@ -305,19 +466,6 @@ class SecondViewController: UIViewController, UITextFieldDelegate, CLLocationMan
         // Check that required fields are filed
         // .... TODO ...
         
-        // Create a var with key: field values of current data
-        //var currentObs = FieldObservaiton(lat: latLabel!.text!, long: longLabel.text!, date: dateText.text!, time: timeText.text!, temp: tempText.text!, comment: commentsText.text ?? "none", photo: obsservationImage!)
-        var fileman = FilesManager()
-        var filename = timeText.text!
-        
-        
-        // Save file
-//        do {
-//            try fileman.save(fileNamed: filename, data: currentObs)
-//        } catch {
-//            debugPrint(error)
-//            //throw Error.writtingFailed
-//        }
         
         // Call http request func
         // Check if required fields are filled out
@@ -481,6 +629,12 @@ class SecondViewController: UIViewController, UITextFieldDelegate, CLLocationMan
     }
     
     
+    // EXIT Button
+    
+    @IBAction func exitToLogin(_ sender: Any) {
+        // delete data and transistion to homescreen
+    }
+    
     
     
     
@@ -642,6 +796,21 @@ class SecondViewController: UIViewController, UITextFieldDelegate, CLLocationMan
     func locationManager(_ manager: CLLocationManager, didFailWithError error: Error)
     {
         print("Error \(error)")
+    }
+    
+    // SEGUES
+    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+        if segue.identifier == "startSegue" || segue.identifier == "exitSegue" {
+            if let destinationVC = segue.destination as? ViewController {
+                //destinationVC.emailTextField.insertText(emailLabel.text!)
+                print("exiting to homescreen")
+            }
+        }
+//        if segue.identifier == "exitSegue" {
+//            if let destinationVC = segue.destination as? ViewController {
+//                //destinationVC.emailTextField.placeholder = "Email"
+//            }
+//        }
     }
 
 

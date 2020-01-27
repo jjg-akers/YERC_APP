@@ -1,8 +1,8 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="15702" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
+<document type="com.apple.InterfaceBuilder3.CocoaTouch.Storyboard.XIB" version="3.0" toolsVersion="15705" targetRuntime="iOS.CocoaTouch" propertyAccessControl="none" useAutolayout="YES" useTraitCollections="YES" useSafeAreas="YES" colorMatched="YES" initialViewController="BYZ-38-t0r">
     <device id="retina4_7" orientation="portrait" appearance="light"/>
     <dependencies>
-        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="15704"/>
+        <plugIn identifier="com.apple.InterfaceBuilder.IBCocoaTouchPlugin" version="15706"/>
         <capability name="Safe area layout guides" minToolsVersion="9.0"/>
         <capability name="documents saved in the Xcode 8 format" minToolsVersion="8.0"/>
     </dependencies>
@@ -231,6 +231,10 @@
                                         <state key="normal" title="SAVE SAMPLE">
                                             <color key="titleColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         </state>
+                                        <connections>
+                                            <action selector="saveObservation:" destination="d1r-J3-7Zc" eventType="touchUpInside" id="DUL-dg-ONH"/>
+                                            <segue destination="BYZ-38-t0r" kind="presentation" identifier="saveSegue" modalPresentationStyle="fullScreen" modalTransitionStyle="crossDissolve" id="nd0-zK-eMC"/>
+                                        </connections>
                                     </button>
                                     <button opaque="NO" contentMode="scaleToFill" contentHorizontalAlignment="center" contentVerticalAlignment="center" buttonType="roundedRect" lineBreakMode="middleTruncation" translatesAutoresizingMaskIntoConstraints="NO" id="U9a-wy-cU5" customClass="CustomButton" customModule="YERC" customModuleProvider="target">
                                         <rect key="frame" x="0.0" y="40" width="175" height="34"/>
@@ -249,7 +253,8 @@
                                             <color key="titleColor" white="0.0" alpha="1" colorSpace="custom" customColorSpace="genericGamma22GrayColorSpace"/>
                                         </state>
                                         <connections>
-                                            <segue destination="k1q-yG-7md" kind="unwind" unwindAction="myUnwindActionWithUnwindSegue:" id="QMw-ow-Cp2"/>
+                                            <action selector="exitToLogin:" destination="d1r-J3-7Zc" eventType="touchUpInside" id="Baj-iB-VhQ"/>
+                                            <segue destination="BYZ-38-t0r" kind="presentation" identifier="exitSegue" modalPresentationStyle="fullScreen" modalTransitionStyle="crossDissolve" id="rmi-cz-Hke"/>
                                         </connections>
                                     </button>
                                 </subviews>
@@ -292,7 +297,6 @@
                     </connections>
                 </viewController>
                 <placeholder placeholderIdentifier="IBFirstResponder" id="1so-go-22g" userLabel="First Responder" customClass="UIResponder" sceneMemberID="firstResponder"/>
-                <exit id="k1q-yG-7md" userLabel="Exit" sceneMemberID="exit"/>
             </objects>
             <point key="canvasLocation" x="847.82608695652175" y="112.5"/>
         </scene>
@@ -300,4 +304,7 @@
     <resources>
         <image name="yerc_green_logoonly" width="274" height="164"/>
     </resources>
+    <inferredMetricsTieBreakers>
+        <segue reference="nd0-zK-eMC"/>
+    </inferredMetricsTieBreakers>
 </document>
