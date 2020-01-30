@@ -1,0 +1,5 @@
+#Adding a .gitattributes file to your project allows you to affect how certain operations #are performed in git by assigning attributes to a particular path.
+
+#In our case, we’re going to use .gitattributes to tell git that any file with the #extension .pbxproj should be treated as binary.
+
+*.pbxproj binary merge=union

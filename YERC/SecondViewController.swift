@@ -235,6 +235,9 @@ class SecondViewController: UIViewController, UITextFieldDelegate, CLLocationMan
     @IBOutlet weak var dateText: UITextField!
     
     var obsservationImage: UIImage? = nil
+    var userEmail = ""
+    @IBOutlet weak var emailLabel: UILabel!
+    
     
     
     // Keep track of which text field is currently selected
@@ -285,7 +288,13 @@ class SecondViewController: UIViewController, UITextFieldDelegate, CLLocationMan
     var locationManager: CLLocationManager!
     
     override func viewDidLoad() {
+        // add navigation bar buttons
+        // the #selector calls the 'addTapped' view controller method - we must define that
+        navigationItem.leftBarButtonItem = UIBarButtonItem(barButtonSystemItem: .add, target: self, action: #selector(addTapped))
+        navigationItem.rightBarButtonItem = UIBarButtonItem(title: "Add", style: .plain, target: self, action: #selector(addTapped))
+
         super.viewDidLoad()
+
         dateText.delegate = self
         timeText.delegate = self
         tempText.delegate = self
@@ -295,9 +304,6 @@ class SecondViewController: UIViewController, UITextFieldDelegate, CLLocationMan
 //        NotificationCenter.default.addObserver(self, selector: #selector(SecondViewController.keyboardWillShow), name: UIResponder.keyboardWillShowNotification, object: nil)
 //        
 //        NotificationCenter.default.addObserver(self, selector: #selector(SecondViewController.keyboardWillHide), name: UIResponder.keyboardWillHideNotification, object: nil)
-        
-        
-
         
         
         // for textviews
@@ -312,6 +318,14 @@ class SecondViewController: UIViewController, UITextFieldDelegate, CLLocationMan
         //request location authorization when the app is in use
         //locationManager.requestWhenInUseAuthorization()
     }
+    
+    // Navigation bar methods
+    @objc func addTapped() {
+        print("nav button pushed")
+    }
+    
+    
+    
     
     @objc func updateTextView(notification: Notification)
       {
@@ -371,13 +385,15 @@ class SecondViewController: UIViewController, UITextFieldDelegate, CLLocationMan
     
     //print("somethinga")
     
-    var userEmail = ""
-    
-    @IBOutlet weak var emailLabel: UILabel!
+
      
     //update the text in this label right before the view will appear to the user.
     override func viewWillAppear(_ animated: Bool) {
         super.viewWillAppear(animated)
+
+
+        
+        //self.navigationController?.setNavigationBarHidden(false, animated: animated)
         
         // date and time
         let nowDate = Date()
@@ -394,8 +410,10 @@ class SecondViewController: UIViewController, UITextFieldDelegate, CLLocationMan
         timeText.text = timeString
         dateText.text = dateString
      
+        
         emailLabel.text = "Welcome \(userEmail)."
         //print("hello")
+        print(emailLabel.text!)
         
         // get current location
         determineCurrentLocation()

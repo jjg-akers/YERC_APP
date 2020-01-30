@@ -26,6 +26,12 @@ class ViewController: UIViewController, UITextFieldDelegate {
         //emailTextField.
     }
     
+    override func viewWillAppear(_ animated: Bool) {
+        super.viewWillAppear(animated)
+        
+        self.navigationController?.setNavigationBarHidden(true, animated: animated)
+    }
+    
     // add action from start sample button
     
     @IBAction func startSample(_ sender: Any) {
@@ -94,12 +100,26 @@ class ViewController: UIViewController, UITextFieldDelegate {
     // Add unwind seque action method so xcode know this view controller will be a destination
     //@IBAction func myUnwindAction(unwindSegue: UIStoryboardSegue){}
     
+//    override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
+//        if segue.identifier == "showItemSegue" {
+//            let navController = segue.destination as! UINavigationController
+//            let detailController = navController.topViewController as! ShowItemViewController
+//            detailController.currentId = nextId!
+//        }
+//    }
+    
     override func prepare(for segue: UIStoryboardSegue, sender: Any?) {
-        if segue.identifier == "startSampleSegue"
-        {
-            if let destinationVC = segue.destination as? SecondViewController {
+        //print("printing: ", emailTextField.text!)
+        if segue.identifier == "startSampleSegue" {
+            let navController = segue.destination as! UINavigationController
+            
+            let destinationVC = navController.viewControllers.first as! SecondViewController
+
+            //var destinationVC = navController.topViewController {
+            //}
+            //if let destinationVC = segue.destination as? SecondViewController {
+                
                 destinationVC.userEmail = emailTextField.text ?? "unknown"
-            }
         }
     }
     
